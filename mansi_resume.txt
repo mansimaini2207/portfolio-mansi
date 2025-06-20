@@ -1,0 +1,67 @@
+MANSI MAINI – SOFTWARE ENGINEER
+
+EXPERIENCE:
+
+Technical Solutions Engineer at Arista Networks (Aug 2022 – Present)
+
+Specialized in advanced data center technologies focused on Switching and Routing
+
+Resolved 320+ complex networking cases (BGP, OSPF, VXLAN, EVPN, etc.) with a 93% CSAT
+
+Led the team to win a network design challenge
+
+Delivered training sessions and presented troubleshooting strategies
+
+Tested and validated solutions via lab reproduction
+
+Worked on platforms: 7050X, 7060X, 7280X, 7500X
+
+Part of internal team handling cases for Microsoft, Google, and Meta
+
+Technical Solutions Intern at Arista Networks (Aug 2022 – Jul 2023)
+
+Gained strong knowledge of IPv4/6, TCP/IP stack, and core Internet protocols
+
+Front-End Developer Intern at Techfabs (Jun 2021 – Sep 2021)
+
+Built company landing page using HTML, CSS, JavaScript
+
+Contributed to real-time deployment and design collaboration
+
+SKILLS:
+
+Programming Languages: Python, JavaScript, HTML, CSS
+
+Networking: BGP, OSPF, ISIS, VXLAN, EVPN, DHCP, TCP/UDP, DNS, STP
+
+Tools & Platforms: Linux, REST APIs, CVP, ZTP
+
+Soft Skills: Problem Solving, Team Collaboration, Communication, Marketing
+
+EDUCATION:
+
+Bachelor of Technology in Electronics and Communication Engineering
+SRM University, Chennai – CGPA: 9.42
+
+PROJECTS:
+
+Failure Detection in Networks (Python)
+
+Automated physical layer issue detection; reduced downtime by 10%
+
+Medical Store Management System (Python)
+
+Built a system for inventory, billing, and database management
+
+VOLUNTEERING:
+
+AIESEC – Organizing Committee VP of Marketing
+
+Developed marketing strategies aligned with market trends
+
+CONFERENCES:
+
+HPAIR Asia Conference 2021 – Accepted participant
+
+MIT Innovation Leadership Bootcamp 2021 – Selected attendee
+
