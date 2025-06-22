@@ -1,247 +1,527 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Sparkles } from 'lucide-react';
+import { Search, Sparkles, X, Settings, Loader2 } from 'lucide-react';
 
-const ResumeChatbot = () => {
-  const [messages, setMessages] = useState([
-    {
-      type: 'bot',
-      content: "Hi! I'm Mansi Maini. Ask me anything about my professional background, experience, or skills!",
-      timestamp: new Date()
-    }
-  ]);
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+const ResumeSearch = () => {
+  const [query, setQuery] = useState('');
+  const [response, setResponse] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showResponse, setShowResponse] = useState(false);
+  const [error, setError] = useState('');
+  const inputRef = useRef(null);
+  
+  // Hardcoded API key - replace with your actual API key
+  const API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 
   // Resume data
-  const resumeData = {
-    experience: [
-      {
-        role: "Software Engineer",
-        company: "Arista Networks",
-        duration: "2 years",
-        responsibilities: [
-          "Worked on network automation and monitoring systems",
-          "Developed Python applications for network configuration",
-          "Collaborated with cross-functional teams on product development"
-        ]
+  const resumeData = `
+MANSI MAINI - SOFTWARE ENGINEER
+
+EXPERIENCE:
+- Software Engineer at Arista Networks (2 years)
+  - Worked on network automation and monitoring systems
+  - Developed Python applications for network configuration
+  - Collaborated with cross-functional teams on product development
+
+- Software Engineering Intern at Tech Startup (6 months)
+  - Developed web applications using React and Node.js
+  - Participated in agile development processes
+  - Contributed to code reviews and testing
+
+SKILLS:
+- Programming Languages: Python, JavaScript, Java, C++
+- Frameworks: React, Node.js, Django, Flask
+- Tools: Git, Docker, Kubernetes, Jenkins
+- Databases: MySQL, PostgreSQL, MongoDB
+
+EDUCATION:
+- Bachelor's in Computer Science
+- Relevant coursework: Data Structures, Algorithms, Software Engineering
+
+PROJECTS:
+- Network Monitoring Dashboard: Built real-time monitoring system
+- E-commerce Web App: Full-stack application with payment integration
+`;
+
+  const suggestions = [
+    "What's your experience at Arista?",
+    "What are your technical skills?",
+    "Tell me about your projects",
+    "What's your education background?",
+    "What programming languages do you know?"
+  ];
+
+  const createSystemPrompt = () => {
+    return `
+You are Mansi Maini, responding to questions about yourself based on your resume and professional background.
+
+IMPORTANT INSTRUCTIONS:
+1. Always respond in first person as Mansi Maini
+2. Only use information provided in the resume data below
+3. If asked about something not in your resume, politely say you don't have that information to share
+4. Keep responses conversational and professional
+5. Be specific about your experience, skills, and achievements when asked
+6. Keep responses concise - aim for 2-3 sentences unless more detail is specifically requested
+
+YOUR RESUME DATA:
+${resumeData}
+
+Remember: You are Mansi Maini answering questions about your professional background. Stay in character and only use the information provided above.
+`;
+  };
+
+  const getGeminiResponse = async (userQuery) => {
+    const systemPrompt = createSystemPrompt();
+    const fullPrompt = `${systemPrompt}\n\nUser Question: ${userQuery}\n\nYour Response:`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      {
-        role: "Software Engineering Intern",
-        company: "Tech Startup",
-        duration: "6 months",
-        responsibilities: [
-          "Developed web applications using React and Node.js",
-          "Participated in agile development processes",
-          "Contributed to code reviews and testing"
-        ]
-      }
-    ],
-    skills: {
-      programming: ["Python", "JavaScript", "Java", "C++"],
-      frameworks: ["React", "Node.js", "Django", "Flask"],
-      tools: ["Git", "Docker", "Kubernetes", "Jenkins"],
-      databases: ["MySQL", "PostgreSQL", "MongoDB"]
-    },
-    education: "Bachelor's in Computer Science",
-    projects: [
-      "Network Monitoring Dashboard: Built real-time monitoring system",
-      "E-commerce Web App: Full-stack application with payment integration"
-    ]
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: fullPrompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.9,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to get response');
+    }
+
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const handleSearch = async () => {
+    if (!query.trim() || isLoading) return;
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    setIsLoading(true);
+    setError('');
+    setShowResponse(true);
 
-  const getResponse = (query) => {
-    const lowerQuery = query.toLowerCase();
-    
-    // Experience related queries
-    if (lowerQuery.includes('experience') || lowerQuery.includes('work') || lowerQuery.includes('job')) {
-      return `I have ${resumeData.experience[0].duration} of experience as a ${resumeData.experience[0].role} at ${resumeData.experience[0].company}, where I ${resumeData.experience[0].responsibilities.join(', ')}. I also completed a ${resumeData.experience[1].duration} internship as a ${resumeData.experience[1].role} at a ${resumeData.experience[1].company}.`;
+    try {
+      const result = await getGeminiResponse(query);
+      setResponse(result);
+    } catch (err) {
+      setError(err.message);
+      setResponse('');
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Skills related queries
-    if (lowerQuery.includes('skill') || lowerQuery.includes('technology') || lowerQuery.includes('programming')) {
-      return `My technical skills include programming languages like ${resumeData.skills.programming.join(', ')}, frameworks such as ${resumeData.skills.frameworks.join(', ')}, development tools like ${resumeData.skills.tools.join(', ')}, and databases including ${resumeData.skills.databases.join(', ')}.`;
-    }
-    
-    // Arista specific queries
-    if (lowerQuery.includes('arista')) {
-      const aristaExp = resumeData.experience[0];
-      return `At ${aristaExp.company}, I worked for ${aristaExp.duration} as a ${aristaExp.role}. My key responsibilities included: ${aristaExp.responsibilities.join(', ')}.`;
-    }
-    
-    // Projects related queries
-    if (lowerQuery.includes('project') || lowerQuery.includes('built') || lowerQuery.includes('developed')) {
-      return `I've worked on several projects including: ${resumeData.projects.join('. ')}. These projects showcase my full-stack development capabilities and problem-solving skills.`;
-    }
-    
-    // Education related queries
-    if (lowerQuery.includes('education') || lowerQuery.includes('degree') || lowerQuery.includes('study')) {
-      return `I have a ${resumeData.education} with relevant coursework in Data Structures, Algorithms, and Software Engineering.`;
-    }
-    
-    // Contact/portfolio queries
-    if (lowerQuery.includes('contact') || lowerQuery.includes('reach') || lowerQuery.includes('email')) {
-      return "You can find my contact information and more details about my work in my portfolio. I'm always open to discussing new opportunities!";
-    }
-    
-    // Default response
-    return "I'd be happy to tell you about my professional background! You can ask me about my experience, skills, projects, education, or anything specific about my work at Arista Networks.";
-  };
-
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
-
-    const userMessage = {
-      type: 'user',
-      content: inputValue,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-    setIsTyping(true);
-
-    // Simulate typing delay
-    setTimeout(() => {
-      const botResponse = {
-        type: 'bot',
-        content: getResponse(inputValue),
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1000 + Math.random() * 1000);
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+    if (e.key === 'Enter') {
+      handleSearch();
     }
   };
 
-  const quickQuestions = [
-    "What's your experience?",
-    "Tell me about your skills",
-    "What projects have you worked on?",
-    "Tell me about Arista Networks"
-  ];
-
-  const handleQuickQuestion = (question) => {
-    setInputValue(question);
+  const handleClear = () => {
+    setQuery('');
+    setResponse('');
+    setShowResponse(false);
+    setError('');
+    inputRef.current?.focus();
   };
 
+  const handleSuggestionClick = (suggestion) => {
+    setQuery(suggestion);
+    setTimeout(() => {
+      handleSearch();
+    }, 100);
+  };
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const styles = {
+    container: {
+      minHeight: '50vh',
+      background: 'linear-gradient(to bottom right, #f8fafc, #f1f5f9)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '16px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', 
+      width: '100%'
+    },
+    wrapper: {
+      width: '100%',
+      maxWidth: '672px'
+    },
+    header: {
+      textAlign: 'center',
+      marginBottom: '32px'
+    },
+    title: {
+      fontSize: '36px',
+      fontWeight: 'bold',
+      color: '#1e293b',
+      marginBottom: '8px',
+      margin: 0
+    },
+    subtitle: {
+      color: '#64748b',
+      fontSize: '16px',
+      margin: 0
+    },
+    searchBox: {
+      position: 'relative'
+    },
+    searchContainer: {
+      backgroundColor: 'white',
+      borderRadius: showResponse ? '24px' : '9999px',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      transition: 'all 0.3s ease'
+    },
+    searchContainerHover: {
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+    },
+    searchInputWrapper: {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '16px 24px'
+    },
+    searchIcon: {
+      color: '#94a3b8',
+      marginRight: '12px',
+      flexShrink: 0
+    },
+    searchInput: {
+      flex: 1,
+      outline: 'none',
+      border: 'none',
+      fontSize: '16px',
+      color: '#334155',
+      backgroundColor: 'transparent'
+    },
+    clearButton: {
+      marginLeft: '8px',
+      padding: '4px',
+      backgroundColor: 'transparent',
+      border: 'none',
+      borderRadius: '50%',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    clearButtonHover: {
+      backgroundColor: '#f1f5f9'
+    },
+    askButton: {
+      marginLeft: '12px',
+      padding: '8px 16px',
+      borderRadius: '9999px',
+      border: 'none',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      fontSize: '14px',
+      fontWeight: '500',
+      cursor: 'pointer',
+      transition: 'all 0.2s'
+    },
+    askButtonEnabled: {
+      backgroundColor: '#3b82f6',
+      color: 'white'
+    },
+    askButtonEnabledHover: {
+      backgroundColor: '#2563eb'
+    },
+    askButtonDisabled: {
+      backgroundColor: '#e2e8f0',
+      color: '#94a3b8',
+      cursor: 'not-allowed'
+    },
+    responseArea: {
+      borderTop: '1px solid #f1f5f9',
+      padding: '16px 24px',
+      animation: 'fadeIn 0.5s ease-out'
+    },
+    loadingWrapper: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      color: '#64748b'
+    },
+    loadingText: {
+      animation: 'pulse 2s ease-in-out infinite'
+    },
+    errorText: {
+      color: '#ef4444',
+      fontSize: '14px'
+    },
+    responseText: {
+      color: '#334155',
+      lineHeight: '1.6'
+    },
+    suggestionsWrapper: {
+      marginTop: '24px',
+      animation: 'fadeIn 0.5s ease-out'
+    },
+    suggestionsLabel: {
+      fontSize: '14px',
+      color: '#64748b',
+      marginBottom: '12px',
+      textAlign: 'center'
+    },
+    suggestionsList: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+      justifyContent: 'center'
+    },
+    suggestionButton: {
+      padding: '8px 16px',
+      borderRadius: '9999px',
+      fontSize: '14px',
+      border: 'none',
+      cursor: 'pointer',
+      transition: 'all 0.2s'
+    },
+    suggestionButtonEnabled: {
+      backgroundColor: 'white',
+      color: '#475569',
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+    },
+    suggestionButtonEnabledHover: {
+      backgroundColor: '#f8fafc',
+      color: '#1e293b',
+      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+    },
+    suggestionButtonDisabled: {
+      backgroundColor: '#f1f5f9',
+      color: '#94a3b8',
+      cursor: 'not-allowed'
+    },
+    settingsWrapper: {
+      marginTop: '32px',
+      textAlign: 'center'
+    },
+    settingsButton: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      fontSize: '14px',
+      color: '#64748b',
+      backgroundColor: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      transition: 'color 0.2s'
+    },
+    settingsButtonHover: {
+      color: '#334155'
+    },
+    settingsPanel: {
+      marginTop: '16px',
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      padding: '16px',
+      animation: 'fadeIn 0.5s ease-out'
+    },
+    settingsHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: '8px'
+    },
+    settingsTitle: {
+      fontWeight: '500',
+      color: '#334155',
+      fontSize: '16px'
+    },
+    settingsCloseButton: {
+      background: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      color: '#94a3b8',
+      padding: '4px'
+    },
+    settingsCloseButtonHover: {
+      color: '#475569'
+    },
+    settingsInput: {
+      width: '100%',
+      padding: '8px 12px',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      outline: 'none',
+      fontSize: '14px',
+      transition: 'border-color 0.2s',
+      boxSizing: 'border-box'
+    },
+    settingsInputFocus: {
+      borderColor: '#3b82f6'
+    },
+    settingsHelp: {
+      marginTop: '8px',
+      fontSize: '12px',
+      color: '#64748b'
+    },
+    settingsLink: {
+      color: '#3b82f6',
+      textDecoration: 'none'
+    },
+    settingsLinkHover: {
+      color: '#2563eb',
+      textDecoration: 'underline'
+    },
+    warning: {
+      marginTop: '16px',
+      textAlign: 'center',
+      fontSize: '14px',
+      color: '#d97706',
+      animation: 'fadeIn 0.5s ease-out'
+    }
+  };
+
+  const animations = `
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+  `;
+
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6 text-white">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-            <Sparkles className="w-6 h-6" />
+    <>
+      <style>{animations}</style>
+      <div style={styles.container}>
+        <div style={styles.wrapper}>
+          {/* Header */}
+          <div style={styles.header}>
+            <h1 style={styles.title}>Ask Mansi Maini</h1>
+            <p style={styles.subtitle}>Software Engineer • Full Stack Developer</p>
           </div>
-          <div>
-            <h2 className="text-2xl font-bold">Chat with Mansi</h2>
-            <p className="text-purple-100">Ask me about my professional background</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Quick Questions */}
-      <div className="p-4 bg-gray-50 border-b">
-        <p className="text-sm text-gray-600 mb-2">Quick questions:</p>
-        <div className="flex flex-wrap gap-2">
-          {quickQuestions.map((question, index) => (
-            <button
-              key={index}
-              onClick={() => handleQuickQuestion(question)}
-              className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm hover:bg-purple-200 transition-colors"
+          {/* Search Box */}
+          <div style={styles.searchBox}>
+            <div 
+              style={styles.searchContainer}
+              onMouseEnter={(e) => e.currentTarget.style.boxShadow = styles.searchContainerHover.boxShadow}
+              onMouseLeave={(e) => e.currentTarget.style.boxShadow = styles.searchContainer.boxShadow}
             >
-              {question}
-            </button>
-          ))}
-        </div>
-      </div>
+              <div style={styles.searchInputWrapper}>
+                <Search style={styles.searchIcon} size={20} />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask about my experience, skills, or projects..."
+                  style={styles.searchInput}
+                  disabled={isLoading}
+                />
+                {query && (
+                  <button
+                    onClick={handleClear}
+                    style={styles.clearButton}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = styles.clearButtonHover.backgroundColor}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <X size={18} style={{ color: '#94a3b8' }} />
+                  </button>
+                )}
+                <button
+                  onClick={handleSearch}
+                  disabled={!query.trim() || isLoading}
+                  style={{
+                    ...styles.askButton,
+                    ...(query.trim() ? styles.askButtonEnabled : styles.askButtonDisabled)
+                  }}
+                  onMouseEnter={(e) => {
+                    if (query.trim()) {
+                      e.currentTarget.style.backgroundColor = styles.askButtonEnabledHover.backgroundColor;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (query.trim()) {
+                      e.currentTarget.style.backgroundColor = styles.askButtonEnabled.backgroundColor;
+                    }
+                  }}
+                >
+                  {isLoading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={16} />
+                  )}
+                  Ask
+                </button>
+              </div>
 
-      {/* Messages */}
-      <div className="h-96 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex items-start gap-3 ${
-              message.type === 'user' ? 'flex-row-reverse' : ''
-            }`}
-          >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-              message.type === 'user' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-purple-500 text-white'
-            }`}>
-              {message.type === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-            </div>
-            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-              message.type === 'user'
-                ? 'bg-blue-500 text-white rounded-br-md'
-                : 'bg-gray-100 text-gray-800 rounded-bl-md'
-            }`}>
-              <p className="text-sm">{message.content}</p>
-              <p className={`text-xs mt-1 ${
-                message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
-              }`}>
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
+              {/* Response Area */}
+              {showResponse && (
+                <div style={styles.responseArea}>
+                  {isLoading ? (
+                    <div style={styles.loadingWrapper}>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span style={styles.loadingText}>Thinking...</span>
+                    </div>
+                  ) : error ? (
+                    <div style={styles.errorText}>{error}</div>
+                  ) : (
+                    <div style={styles.responseText}>{response}</div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
-        ))}
-        
-        {isTyping && (
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center">
-              <Bot className="w-4 h-4" />
-            </div>
-            <div className="bg-gray-100 px-4 py-2 rounded-2xl rounded-bl-md">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+
+          {/* Suggestions */}
+          {!showResponse && (
+            <div style={styles.suggestionsWrapper}>
+              <p style={styles.suggestionsLabel}>Try asking:</p>
+              <div style={styles.suggestionsList}>
+                {suggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    style={{
+                      ...styles.suggestionButton,
+                      ...styles.suggestionButtonEnabled
+                    }}
+                    onMouseEnter={(e) => {
+                      Object.assign(e.currentTarget.style, styles.suggestionButtonEnabledHover);
+                    }}
+                    onMouseLeave={(e) => {
+                      Object.assign(e.currentTarget.style, styles.suggestionButtonEnabled);
+                    }}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="p-4 border-t bg-gray-50">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask me about my experience, skills, or projects..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            disabled={isTyping}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isTyping}
-            className="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default ResumeChatbot;
+export default ResumeSearch;

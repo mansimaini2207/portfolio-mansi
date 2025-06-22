@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa';
+import ResumeChatbot from "./ResumeChat"
 
 function Header() {
   return (
@@ -20,6 +21,8 @@ function Header() {
           <FaTwitter size={24} />
         </a>
       </div>
+          <ResumeChatbot/>
+
     </header>
   );
 }
