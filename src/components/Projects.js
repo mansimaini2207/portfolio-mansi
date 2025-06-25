@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
+
 const projects = [
   {
     title: 'Portfolio Website',
@@ -108,7 +109,6 @@ const Projects = () => {
           </motion.a>
         ))}
       </div>
-
       {/* Hide scrollbar visually but allow scroll */}
       <style>{`
         .scroll-container::-webkit-scrollbar {
