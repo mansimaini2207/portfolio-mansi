@@ -5,7 +5,7 @@ const projects = [
   {
     title: 'Portfolio Website',
     description: 'My personal React-based portfolio site showcasing projects and skills.',
-    link: 'https://yourportfolio.com',
+    link: 'https://github.com/mansimaini2207/portfolio-mansi',
     tech: ['React', 'CSS', 'JavaScript'],
     icon: '🌐'
   },
