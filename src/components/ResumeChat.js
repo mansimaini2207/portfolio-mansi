@@ -435,7 +435,7 @@ Remember: You are Mansi Maini answering questions about your professional backgr
           {/* Header */}
           <div style={styles.header}>
             <h1 style={styles.title}>Ask Mansi Maini</h1>
-            <p style={styles.subtitle}>Software Engineer • Full Stack Developer</p>
+            <p style={styles.subtitle}>Technical Solutions Engineer</p>
           </div>
 
           {/* Search Box */}

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ResumeChatbot from "./ResumeChat"
 import { FaGithub, FaLinkedin, FaTwitter, FaEnvelope, FaMapMarkerAlt, FaNetworkWired } from 'react-icons/fa';
 import PersonalImage from "../assets/image.png"
-import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
-
+import ResumePDF from "../assets/Mansi_Maini_Resume.pdf" // Add your PDF file here
 
 function Header() {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [currentSkill, setCurrentSkill] = useState(0);
   const skills = ['Network Engineer'];
@@ -24,6 +25,16 @@ function Header() {
     { icon: FaLinkedin, href: "https://www.linkedin.com/in/mansimaini/", label: "LinkedIn" },
     { icon: FaEnvelope, href: "mailto:mansimaini20@gmail.com", label: "Email" }
   ];
+
+  // Function to handle resume download
+  const handleResumeDownload = () => {
+    const link = document.createElement('a');
+    link.href = ResumePDF;
+    link.download = 'Mansi_Maini_Resume.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <>
@@ -151,18 +162,21 @@ function Header() {
               0 0 0 1px rgba(255, 255, 255, 0.05) inset;
             transition: all 0.3s ease;
             flex-shrink: 0;
+            overflow: hidden;
           }
-          .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-          }
+
           .avatar:hover {
             transform: scale(1.05);
             box-shadow: 
               0 12px 32px rgba(0, 0, 0, 0.3),
               0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+          }
+
+          .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
           }
 
           .location {
@@ -196,17 +210,6 @@ function Header() {
             animation: fadeInUp 1s ease-out 1s both;
           }
 
-          .role-text::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 2px;
-            height: 1.5rem;
-            background: #94a3b8;
-            animation: blink 1s infinite;
-          }
 
           @keyframes blink {
             0%, 50% { opacity: 1; }
@@ -547,7 +550,7 @@ function Header() {
             {/* Avatar and Location */}
             <div className="avatar-container">
               <div className="avatar">
-                <img src={PersonalImage}/>
+                <img src={PersonalImage} alt="Mansi Maini" />
               </div>
               <div className="location">
                 <FaMapMarkerAlt style={{ color: '#94a3b8' }} />
@@ -588,10 +591,16 @@ function Header() {
 
             {/* Call to Action Buttons */}
             <div className="buttons-container">
-              <button className="primary-button" onClick={() => window.location.href = '/Projects'} >
+              <button 
+                className="primary-button"
+                onClick={() => navigate('/Projects')}
+              >
                 <span>View My Work</span>
               </button>
-              <button className="secondary-button">
+              <button 
+                className="secondary-button"
+                onClick={handleResumeDownload}
+              >
                 Download Resume
               </button>
             </div>
@@ -608,4 +617,3 @@ function Header() {
 }
 
 export default Header;
-
